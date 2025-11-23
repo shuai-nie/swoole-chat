@@ -72,4 +72,85 @@ class User
 
     }
 
+    public function addFriend($data)
+    {
+        $isExist = $this->userModel->findByUserNameWithStatus($data['username']);
+        if (empty($isExist)) {
+            throw new Exception('用户不存在');
+        }
+
+        $socket = $this->redis->get(config('redis.socket_pre').$isExist['id']);
+        if (!empty($socket['apply_list'])) {
+            foreach ($socket['apply_list'] as $key => $value ) {
+                if ($key == $data['uid']) {
+                    throw new Exception('请勿重复添加');
+                }
+            }
+        }
+
+        if ($this->friendModel->isFriend($data['user']['id'], $isExist['id'])) {
+            throw new Exception('已经是好友');
+        }
+
+
+        if ($isExist['id'] == $data['user']['id']) {
+            throw new Exception('不能添加自己为好友');
+        }
+
+        $send = [
+            'type' => 'add_friend',
+            'uid' => $data['user']['id'],
+            'username' => $data['user']['username'],
+            'target' => $isExist['id'],
+            'target_username' => $isExist['username'],
+        ];
+
+        $client = new Client('wss://apptest.huihuagongxue.top:9502?type=public&token=' . $data['token']);
+        $client -> send(json_encode($send));
+        $receive = json_decode($client -> receive(), true);
+        if ($receive['status'] == config('status.success')){
+            $client -> close();
+        }
+    }
+
+    public function logoff($token)
+    {
+        $this->redis->delete(config('redis.socket_pre').$token);
+    }
+
+    public function login($data)
+    {
+        $isExist = $this->userModel->findByUserNameWithStatus($data['username']);
+        if (empty($isExist)) {
+            throw new Exception('用户不存在');
+        }
+        $password = md5($isExist['password_salt'] . $data['password']. $isExist['last_login_token']);
+        if ($password != $isExist['password']) {
+            throw new Exception('密码错误');
+        }
+
+        $this->redis->delete(config('redis.socket_pre').$isExist['last_login_token']);
+        $token = $this->str->createToken($isExist['username']);
+        $this->userModel->updateLoginInfo([
+            'username' => $isExist['username'],
+            'last_login_token' => $token,
+        ]);
+        $this->redis->set(config('redis.socket_pre').$token, [
+            'id' => $isExist['id'],
+            'username' => $isExist['username'],
+        ]);
+        return $token;
+    }
+
+    public function register($data)
+    {
+        $isExist = $this->userModel->findByUserName($data['username']);
+        if (!empty($isExist)) {
+            throw new Exception('用户已存在');
+        }
+        $data['password_salt'] = $this->str->salt(5);
+        $data['password'] = md5($data['password_salt'] . $data['password']);
+        $this->userModel->save($data);
+    }
+
 }
