@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html class="x-admin-sm">
+<head>
+    {include file="public/_meta" /}
+</head>
+<body class="index">
+<div class="container">
+    <div class="logo">
+        <a href="/api/View/User/index">IMChat</a>
+    </div>
+    <ul class="layui-nav right">
+        <li class="layui-nav-item to-index">
+            <a id="quit">退出</a>
+        </li>
+    </ul>
+</div>
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15" id="list">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-body ">
+                    <form class="layui-form">
+                        <div class="layui-form-item">
+                            <label for="username" class="layui-form-label">
+                                添加好友
+                            </label>
+                            <div class="layui-input-inline">
+                                <input type="text" id="username" name="username" required="" lay-verify="required" autocomplete="off" class="layui-input">
+                            </div>
+                            <div class="layui-form-mid layui-word-aux">
+                                <span class="x-red">*</span>输入对方的用户名
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">
+                            </label>
+                            <button  class="layui-btn" lay-filter="add" lay-submit="">
+                                添加
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">好友申请</div>
+                <div class="layui-card-body ">
+                    <ul id="friend_list" class="layui-row layui-col-space10 layui-this x-admin-carousel x-admin-backlog">
+
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    isApiLogin();
+    let wsServer = 'wss://apptest.huihuagongxue.top:9502?type=index&token=' + getApiToken(),
+        websocket = null,
+        lock = false;
+    $(document).ready(function (){
+        $.ajax({
+            type : "POST",
+            contentType : "application/x-www-form-urlencoded",
+            url : '/api/User/friendList',
+            success : function (res) {
+                if (res.status === config('failed')){
+                    layer.msg(res.message);
+                    return false;
+                }
+                renderFriendList(res.result);
+            }
+        });
+        link();
+        $("#quit").click(function() {
+            $.ajax({
+                type : "POST",
+                contentType : "application/x-www-form-urlencoded",
+                url : '/api/User/logoff',
+                success : function(res) {
+                    if (res.status === config('failed')){
+                        layer.msg(res.message);
+                        return false;
+                    }
+                    if (res.status === config('success')){
+                        layer.msg(res.result, function () {
+                            $.removeCookie('api_login_token', {path: '/'});
+                            $(window).attr('location', '/api/View/User/login');
+                        });
+                    }
+                }
+            });
+        });
+    });
+    layui.use(['form', 'layer'], function () {
+        var form = layui.form,
+            layer = layui.layer;
+        form.on('submit(add)', function (res) {
+            $.ajax({
+                type : "POST",
+                contentType : "application/x-www-form-urlencoded",
+                url : '/api/User/addFriend',
+                data : {
+                    username : res.field.username
+                },
+                success : function (res) {
+                    if (res.status === config('failed')){
+                        layer.msg(res.message);
+                    }else if (res.status === config('success')){
+                        layer.msg(res.result);
+                    }
+                }
+            });
+            return false;
+        })
+    });
+    function renderDelay(data) {
+        let str = "<span class=\"layui-badge layui-bg-red layuiadmin-badge\">" + data['message'] + "</span>";
+        if (!empty(data['count'])){
+            str += "<span class=\"layui-badge layui-bg-green layuiadmin-badge\">" + data['count'] + "</span>";
+        }
+        $("#uid_" + data['uid']).html(str);
+    }
+    function openChat(uid){
+        window.open('/api/View/Chat/room?uid=' + uid)
+    }
+    function renderFriendList(data){
+        for (let key of data){
+            $("#list").append(
+                "<div onclick='openChat(" + key['fid'] + ")' class=\"layui-col-sm6 layui-col-md3\">" +
+                    "<div class=\"layui-card\">" +
+                        "<div class=\"layui-card-header\">" +
+                            "<span class=\"layui-badge layui-bg-cyan layuiadmin-badge\">" + key['username'] + "</span>" +
+                        "</div>" +
+                        "<div class=\"layui-card-body  \">" +
+                            "<p class=\"layuiadmin-big-font\" id='uid_" + key['fid'] + "'></p>" +
+                        "</div>" +
+                    "</div>" +
+                "</div>"
+            );
+        }
+    }
+    function renderApplyList(data){
+        console.log(data);
+        let message = data['message'];
+        if (empty(message)){
+            message = "对方没有任何留言";
+        }
+        $("#friend_list").append(
+            "<li class=\"layui-col-md2 layui-col-xs6\">" +
+                "<a onclick=\"handleFriend(this, " + data['from'] + ")\" href=\"javascript:;\" class=\"x-admin-backlog-body\">" +
+                    "<h3>来自<span class=\"layui-badge layui-bg-green layuiadmin-badge\">" + data['username'] + "</span>的好友申请</h3>" +
+                    "<p>" +
+                        "<cite>留言：" + message + "</cite>" +
+                    "</p>" +
+                "</a>" +
+            "</li>"
+        );
+    }
+    function handleFriend(obj, id){
+        layer.confirm('确定要加对方为好友吗？', {
+            icon : 3,
+            title : "注意",
+            btn : ["确定", "不加"],
+            end : function (){
+                location.reload();
+            }
+        }, function (index){
+            sendHandleFriend(obj, 1, id);
+            layer.close(index);
+        }, function (index){
+            sendHandleFriend(obj, 0, id);
+            layer.close(index);
+        });
+    }
+    function sendHandleFriend(obj, decision, id){
+        $(obj).parents("li").remove();
+        $.ajax({
+            type : "POST",
+            contentType : "application/x-www-form-urlencoded",
+            url : '/api/User/handleFriend',
+            data : {
+                decision : decision,
+                target : id,
+            },
+            success : function (res) {
+                if (res.status === config('failed')){
+                    layer.msg(res.message);
+                }else if (res.status === config('success')){
+                    layer.msg(res.result);
+                }
+            }
+        });
+    }
+    function link(){
+        websocket = new WebSocket(wsServer);
+
+        websocket.onopen = function (res) {
+
+        };
+
+        websocket.onclose = function (res) {
+            websocket.close();
+            relink();
+        };
+
+        websocket.onmessage = function (res) {
+            let data = JSON.parse(res.data)['result'];
+            if (data['type'] === 'addFriend'){
+                renderApplyList(data);
+            }
+            if (data['type'] === 'chat'){
+                renderDelay(data);
+            }
+        };
+
+        websocket.onerror = function (res, e) {
+            websocket.close();
+            relink();
+        };
+    }
+    function relink(){
+        if (lock){
+            return false;
+        }
+        lock = true;
+        setTimeout(function (){
+            link();
+            lock = false;
+        }, 1000);
+    }
+</script>
+</body>
+</html>
