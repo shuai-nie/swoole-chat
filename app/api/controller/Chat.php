@@ -31,7 +31,7 @@ class Chat extends BaseController
 
 
 
-    
+
 
     
 
