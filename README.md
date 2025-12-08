@@ -23,7 +23,3 @@ composer create-project topthink/think . --prefer-dist --no-interaction --no-ins
 
 ## 版权信息
 
-
-
-
-
