@@ -11,9 +11,7 @@ use think\Validate;
 
 class User extends BaseController
 {
-
     protected $business = null;
-
     public function  __construct(App $app)
     {
         parent::__construct($app);
