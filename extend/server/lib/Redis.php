@@ -9,11 +9,12 @@ class Redis
 {
     private $store = null;
     private $redis = null;
-    public function __construct($store = 'redis')
-    {
-        $this->setStore($store);
         $this->redis = new R('cache.stores.'.$this->store);
-    }
+//    public function __construct($store = 'redis')
+//    {
+//        $this->setStore($store);
+//        $this->redis = new R(config('cache.stores.'.$this->store));
+//    }
 
     public function set($key, $value, $ttl = null)
     {

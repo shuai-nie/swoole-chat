@@ -27,10 +27,9 @@ return [
 
         'redis'  => [
             'type'       => 'redis',
-            'port'       => env('redis.port', 6379) ,
-            'host'       => env('redis.host', '127.0.0.1') ,
-            'select'     => 10,
-            'prefix'     => env('redis.prefix', 'think'),
+            'port'       => 6379 ,
+            'host'       => '127.0.0.1',
+            'select'     => 10
         ]
     ],
 ];
