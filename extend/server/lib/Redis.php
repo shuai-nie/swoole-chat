@@ -1,9 +1,9 @@
 <?php
 
-namespace lib;
+namespace server\lib;
 
-use think\facade\Cache;
 use think\cache\driver\Redis as R;
+use think\facade\Cache;
 
 class Redis
 {

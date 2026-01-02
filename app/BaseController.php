@@ -3,10 +3,10 @@ declare (strict_types = 1);
 
 namespace app;
 
+use server\lib\Redis;
 use think\App;
 use think\exception\ValidateException;
 use think\Validate;
-use lib\Redis;
 
 /**
  * 控制器基础类

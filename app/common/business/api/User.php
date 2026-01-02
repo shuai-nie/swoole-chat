@@ -2,11 +2,11 @@
 
 namespace app\common\business\api;
 
-use lib\Redis;
-use lib\Str;
 use app\common\model\api\Friend;
 use app\common\model\api\User as UserModel;
 use Exception;
+use server\lib\Redis;
+use server\lib\Str;
 use think\facade\Db;
 use WebSocket\Client;
 
