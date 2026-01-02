@@ -36,6 +36,7 @@ abstract class BaseController
      * @var array
      */
     protected $middleware = [];
+    protected $redis = null;
 
     /**
      * 构造方法
