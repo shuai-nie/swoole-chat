@@ -56,7 +56,7 @@
 </div>
 <script>
     isApiLogin();
-    let wsServer = 'wss://apptest.huihuagongxue.top:9502?type=index&token=' + getApiToken(),
+    let wsServer = wsUrl + '?type=index&token=' + getApiToken(),
         websocket = null,
         lock = false;
     $(document).ready(function (){

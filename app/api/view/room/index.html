@@ -44,7 +44,7 @@
     isApiLogin();
     let param = getParams(),
         uid = param.uid,
-        wsServer = 'wss://apptest.huihuagongxue.top:9502?type=chat_uid_' + uid + '&token=' + getApiToken(),
+        wsServer = wsUrl + '?type=chat_uid_' + uid + '&token=' + getApiToken(),
         websocket = null,
         lock = false;
     $(document).ready(function (){
