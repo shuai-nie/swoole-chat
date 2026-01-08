@@ -10,8 +10,6 @@ class Str
         return sha1($tokenSalt . $str);
     }
 
-
-    
     public function salt($bit) {
         $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
         $str = '';
