@@ -4,10 +4,6 @@ namespace server\lib;
 
 class Str
 {
-
-
-
-    
     public function createToken($str) {
         $tokenSalt = md5(uniqid(md5(microtime(true)), true));
         return sha1($tokenSalt . $str);
